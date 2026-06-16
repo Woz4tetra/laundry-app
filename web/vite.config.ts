@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import tailwind from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-const API_TARGET = process.env.API_TARGET || 'http://localhost:8787';
+const API_TARGET = process.env.API_TARGET || 'http://localhost:23103';
 
 export default defineConfig({
   plugins: [
@@ -35,7 +35,7 @@ export default defineConfig({
     }),
   ],
   server: {
-    port: 5173,
+    port: 32035,
     proxy: {
       '/api': { target: API_TARGET, changeOrigin: true },
     },

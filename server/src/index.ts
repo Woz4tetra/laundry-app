@@ -16,7 +16,7 @@ import pushRoutes from './routes/push.js';
 import labelRoutes from './routes/label.js';
 import { startTimerLoop } from './push.js';
 
-const PORT = Number(process.env.PORT || 8787);
+const PORT = Number(process.env.PORT || 23103);
 const SECRET = process.env.SESSION_SECRET || 'dev-insecure-secret-change-me';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

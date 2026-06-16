@@ -6,8 +6,8 @@ services:
     env_file: .env
     environment:
       - DATA_DIR=/data
-      - PORT=${PORT:-8787}
+      - PORT=${PORT:-23103}
     ports:
-      - "${PORT:-8787}:${PORT:-8787}"
+      - "${PORT:-23103}:${PORT:-23103}"
     volumes:
       - ./data:/data

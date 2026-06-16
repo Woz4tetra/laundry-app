@@ -38,8 +38,8 @@ cp .env.example .env
 npm run gen-vapid
 
 # two terminals:
-npm run dev:server   # http://localhost:8787
-npm run dev:web      # http://localhost:5173 (proxies /api to the server)
+npm run dev:server   # http://localhost:23103
+npm run dev:web      # http://localhost:32035 (proxies /api to the server)
 ```
 
 Run the engine unit tests:
@@ -55,11 +55,11 @@ cp .env.example .env       # set APP_PASSCODE, SESSION_SECRET, VAPID keys
 docker compose up --build -d
 ```
 
-Then open it from any device on the tailnet at `http://<tailscale-ip>:8787`. For HTTPS (needed
+Then open it from any device on the tailnet at `http://<tailscale-ip>:23103`. For HTTPS (needed
 for some PWA/push features on iOS) expose it tailnet-only with:
 
 ```bash
-tailscale serve --bg 8787
+tailscale serve --bg 23103
 ```
 
 Data (the SQLite db) persists in `./data`.
