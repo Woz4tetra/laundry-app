@@ -1,0 +1,13 @@
+services:
+  laundry:
+    build: .
+    container_name: laundry-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DATA_DIR=/data
+      - PORT=${PORT:-8787}
+    ports:
+      - "${PORT:-8787}:${PORT:-8787}"
+    volumes:
+      - ./data:/data
