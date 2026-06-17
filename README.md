@@ -42,6 +42,17 @@ npm run dev:server   # http://localhost:23103
 npm run dev:web      # http://localhost:32035 (proxies /api to the server)
 ```
 
+To access the dev server from other devices on your local network, find your machine's IP:
+
+```bash
+ip route get 1 | awk '{print $7; exit}'   # Linux
+# or: hostname -I | awk '{print $1}'
+```
+
+Then open `http://<your-ip>:32035` on any device on the same network. The Vite dev server
+binds to all interfaces (`host: true`) and proxies `/api` to the backend on port 23103, which
+also binds to `0.0.0.0`.
+
 Run the engine unit tests:
 
 ```bash
