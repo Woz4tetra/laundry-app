@@ -61,10 +61,35 @@ npm test
 
 ## Deploy on the home server
 
+Needs Docker with the Compose v2 plugin (the `docker compose` subcommand).
+Ubuntu's `docker.io` package does not include it, so install the plugin too:
+
+```bash
+sudo apt install docker.io docker-compose-v2
+```
+
+Or install Docker Engine plus the Compose plugin from Docker's official repo:
+
+```bash
+curl -fsSL https://get.docker.com | sudo sh
+```
+
+Optional: run docker without `sudo` (log out and back in afterward, or run
+`newgrp docker`):
+
+```bash
+sudo usermod -aG docker "$USER"
+```
+
+Then build and start:
+
 ```bash
 cp .env.example .env       # set APP_PASSCODE, SESSION_SECRET, VAPID keys
 docker compose up --build -d
 ```
+
+If your machine only has the older Compose v1 (`docker-compose` as a separate
+binary, with a hyphen), use `docker-compose up --build -d` instead.
 
 Then open it from any device on the tailnet at `http://<tailscale-ip>:23103`. For HTTPS (needed
 for some PWA/push features on iOS) expose it tailnet-only with:
