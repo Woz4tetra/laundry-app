@@ -15,7 +15,7 @@ const FILL_HEIGHT: Record<FillLevel, string> = {
   empty: '0%',
   small: '33%',
   half: '60%',
-  full: '90%',
+  full: '100%',
 };
 
 export function Sort() {

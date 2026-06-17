@@ -97,10 +97,16 @@ export function computeDry(load: Load, categories: Category[]): DrySettings {
   }
 }
 
-/** Prep rules that apply to any category in this load. */
+/**
+ * Prep rules that apply to this load. A rule with '*' in appliesTo is an
+ * "all loads" reminder and shows on every load; otherwise it's a per-load
+ * reminder that only shows when the load contains one of its categories.
+ */
 export function prepRulesForLoad(
   load: Load,
   prepRules: { id: string; text: string; icon: string; appliesTo: string[] }[],
 ) {
-  return prepRules.filter((r) => r.appliesTo.some((c) => load.categoryIds.includes(c)));
+  return prepRules.filter(
+    (r) => r.appliesTo.includes('*') || r.appliesTo.some((c) => load.categoryIds.includes(c)),
+  );
 }

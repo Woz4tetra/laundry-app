@@ -38,6 +38,9 @@ export function Rules() {
   const patchCat = (id: string, patch: Partial<Category>) =>
     setCategories((cs) => cs.map((c) => (c.id === id ? { ...c, ...patch } : c)));
 
+  // Categories a per-load reminder can target (service-routed ones never wash).
+  const washCategories = categories.filter((c) => !c.routeToService);
+
   return (
     <div className="pb-4">
       <Header title="Rules" />
@@ -195,34 +198,89 @@ export function Rules() {
 
       {/* Prep rules */}
       <Section title="Prep reminders">
-        {prep.map((r, i) => (
-          <div key={r.id} className="flex items-center gap-2">
-            <input
-              value={r.text}
-              onChange={(e) =>
-                setPrep((p) => p.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)))
-              }
-              className="flex-1 rounded-lg bg-slate-700 px-3 py-2 text-sm"
-            />
-            <button
-              className="text-rose-400"
-              onClick={() => setPrep((p) => p.filter((_, j) => j !== i))}
-            >
-              ✕
-            </button>
-          </div>
-        ))}
+        {prep.map((r, i) => {
+          const isAll = r.appliesTo.includes('*');
+          const setRule = (patch: Partial<PrepRule>) =>
+            setPrep((p) => p.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+          const toggleCat = (id: string) =>
+            setRule({
+              appliesTo: r.appliesTo.includes(id)
+                ? r.appliesTo.filter((c) => c !== id)
+                : [...r.appliesTo.filter((c) => c !== '*'), id],
+            });
+          return (
+            <div key={r.id} className="space-y-2 rounded-2xl bg-slate-900/60 p-3">
+              <div className="flex items-center gap-2">
+                <input
+                  value={r.text}
+                  onChange={(e) => setRule({ text: e.target.value })}
+                  className="flex-1 rounded-lg bg-slate-700 px-3 py-2 text-sm"
+                />
+                <button
+                  className="text-rose-400"
+                  onClick={() => setPrep((p) => p.filter((_, j) => j !== i))}
+                  aria-label="delete reminder"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="flex gap-2 text-sm">
+                <button
+                  onClick={() => setRule({ appliesTo: ['*'] })}
+                  className={`flex-1 rounded-lg py-1.5 ${
+                    isAll ? 'bg-sky-500 text-white' : 'bg-slate-700 text-slate-300'
+                  }`}
+                >
+                  All loads
+                </button>
+                <button
+                  onClick={() => setRule({ appliesTo: r.appliesTo.filter((c) => c !== '*') })}
+                  className={`flex-1 rounded-lg py-1.5 ${
+                    isAll ? 'bg-slate-700 text-slate-300' : 'bg-sky-500 text-white'
+                  }`}
+                >
+                  Specific loads
+                </button>
+              </div>
+              {!isAll && (
+                <div className="flex flex-wrap gap-2">
+                  {washCategories.map((c) => {
+                    const on = r.appliesTo.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => toggleCat(c.id)}
+                        className={`rounded-full px-3 py-1 text-sm ring-1 ${
+                          on
+                            ? 'bg-sky-500/20 text-sky-200 ring-sky-400/40'
+                            : 'bg-slate-800 text-slate-400 ring-white/10'
+                        }`}
+                      >
+                        {c.icon} {c.name}
+                      </button>
+                    );
+                  })}
+                  {r.appliesTo.length === 0 && (
+                    <span className="self-center text-xs text-amber-300/80">
+                      Pick a category, or choose All loads.
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
         <Button
           variant="ghost"
           className="w-full py-2 text-sm"
           onClick={() =>
             setPrep((p) => [
               ...p,
-              { id: `rule_${p.length + 1}_${Date.now()}`, text: 'New reminder', icon: '📝', appliesTo: categories.filter((c) => !c.routeToService).map((c) => c.id) },
+              { id: `rule_${p.length + 1}_${Date.now()}`, text: 'New reminder', icon: '📝', appliesTo: ['*'] },
             ])
           }
         >
-          + Add reminder (applies to all loads)
+          + Add reminder
         </Button>
       </Section>
 
@@ -270,7 +328,7 @@ export function Rules() {
         ))}
       </Section>
 
-      <div className="sticky bottom-24 mt-6">
+      <div className="mt-6">
         <Button className="w-full" onClick={save}>
           {saved ? 'Saved ✓' : 'Save changes'}
         </Button>

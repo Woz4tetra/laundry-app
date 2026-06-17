@@ -23,6 +23,7 @@ export interface PrepRule {
   id: string;
   text: string;
   icon: string;
+  /** Category ids this reminder applies to, or ['*'] for every load. */
   appliesTo: string[];
 }
 
