@@ -14,6 +14,7 @@ type Sub = 'prep' | 'load' | 'wash' | 'dry' | 'done';
 
 function subFor(status: LoadStatus, hasPrep: boolean): Sub {
   switch (status) {
+    case 'ready_to_wash':
     case 'washing':
       return 'wash';
     case 'wash_done':
@@ -26,6 +27,16 @@ function subFor(status: LoadStatus, hasPrep: boolean): Sub {
       return hasPrep ? 'prep' : 'load';
   }
 }
+
+const STAGE_ORDER: Sub[] = ['prep', 'load', 'wash', 'dry', 'done'];
+// Status a load returns to when you rewind to the start of a given stage.
+const ENTRY_STATUS: Record<Sub, LoadStatus> = {
+  prep: 'prepping',
+  load: 'prepping',
+  wash: 'ready_to_wash',
+  dry: 'wash_done',
+  done: 'done',
+};
 
 function CheckRow({
   checked,
@@ -101,6 +112,23 @@ export function RunLoad() {
       extra?.(l);
     });
 
+  // Rewind to the start of an earlier stage: drop any running/scheduled timer
+  // and reset status so the target stage renders fresh.
+  const goToStage = (target: Sub) => {
+    updateLoad(load.id, (l) => {
+      delete l.timer;
+      l.status = ENTRY_STATUS[target];
+    });
+    setSub(target);
+  };
+
+  // Back out of a running or scheduled timer without leaving the current stage.
+  const cancelTimer = (status: LoadStatus) =>
+    updateLoad(load.id, (l) => {
+      delete l.timer;
+      l.status = status;
+    });
+
   const prepDone = prepItems.every((r) => load.checked[r.id]);
 
   // --- bedtime / quiet-hours check for wash (+ dry if machine) ---
@@ -144,22 +172,35 @@ export function RunLoad() {
     setSub('done');
   };
 
-  const Stepper = () => (
-    <div className="mb-4 flex items-center gap-2 text-xs text-slate-400">
-      {(['prep', 'load', 'wash', 'dry', 'done'] as Sub[])
-        .filter((s) => s !== 'prep' || prepItems.length > 0)
-        .map((s) => (
-          <span
-            key={s}
-            className={`rounded-full px-2 py-1 capitalize ${
-              s === sub ? 'bg-sky-500/20 text-sky-300' : 'bg-slate-800'
-            }`}
-          >
-            {s}
-          </span>
-        ))}
-    </div>
-  );
+  const Stepper = () => {
+    const visible = STAGE_ORDER.filter((s) => s !== 'prep' || prepItems.length > 0);
+    const curIdx = STAGE_ORDER.indexOf(sub);
+    return (
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+        {visible.map((s) => {
+          const back = STAGE_ORDER.indexOf(s) < curIdx;
+          return (
+            <button
+              key={s}
+              type="button"
+              disabled={!back}
+              onClick={() => goToStage(s)}
+              className={`rounded-full px-2 py-1 capitalize transition ${
+                s === sub
+                  ? 'bg-sky-500/20 text-sky-300'
+                  : back
+                    ? 'bg-slate-800 text-slate-300 active:scale-95'
+                    : 'bg-slate-800/50 text-slate-600'
+              }`}
+            >
+              {s}
+            </button>
+          );
+        })}
+        {curIdx > 0 && <span className="text-[10px] text-slate-500">← tap a step to go back</span>}
+      </div>
+    );
+  };
 
   return (
     <div className="safe-top px-1">
@@ -255,6 +296,12 @@ export function RunLoad() {
               <Button variant="success" className="w-full" onClick={() => { setStatus('wash_done'); setSub('dry'); }}>
                 Wash is done →
               </Button>
+              <button
+                className="mt-2 w-full text-sm text-slate-400 underline"
+                onClick={() => cancelTimer('ready_to_wash')}
+              >
+                ← Cancel & edit wash settings
+              </button>
             </Card>
           ) : load.timer?.kind === 'delayed_start' ? (
             <Card className="ring-amber-500/40">
@@ -266,6 +313,12 @@ export function RunLoad() {
               <Button className="mt-3 w-full" onClick={startWash}>
                 Actually, start now
               </Button>
+              <button
+                className="mt-2 w-full text-sm text-slate-400 underline"
+                onClick={() => cancelTimer('ready_to_wash')}
+              >
+                ← Back to wash settings
+              </button>
             </Card>
           ) : (
             <>
@@ -321,6 +374,12 @@ export function RunLoad() {
               <Button variant="success" className="w-full" onClick={finish}>
                 Dry is done 🎉
               </Button>
+              <button
+                className="mt-2 w-full text-sm text-slate-400 underline"
+                onClick={() => cancelTimer('wash_done')}
+              >
+                ← Back to dryer settings
+              </button>
             </Card>
           ) : (
             <>

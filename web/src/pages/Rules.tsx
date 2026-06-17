@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
-import { Button, Card, Header } from '../components/ui';
+import { Button, Card } from '../components/ui';
 import { enableNotifications, notificationsActive, pushSupported } from '../lib/push';
 import type { Category, GlobalSettings, Machine, PrepRule } from '../lib/types';
 
@@ -41,9 +41,32 @@ export function Rules() {
   // Categories a per-load reminder can target (service-routed ones never wash).
   const washCategories = categories.filter((c) => !c.routeToService);
 
+  // Are there unsaved edits? Drives the always-visible Save button's state.
+  const dirty =
+    !!config &&
+    (JSON.stringify(settings) !== JSON.stringify(config.settings) ||
+      JSON.stringify(categories) !== JSON.stringify(config.categories) ||
+      JSON.stringify(prep) !== JSON.stringify(config.prepRules) ||
+      JSON.stringify(machines) !== JSON.stringify(config.machines));
+
   return (
     <div className="pb-4">
-      <Header title="Rules" />
+      <div className="safe-top sticky top-0 z-10 -mx-4 mb-4 flex items-center justify-between gap-3 border-b border-white/10 bg-slate-900/90 px-4 py-3 backdrop-blur">
+        <h1 className="text-2xl font-bold tracking-tight">Rules</h1>
+        <button
+          onClick={save}
+          disabled={!dirty && !saved}
+          className={`rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${
+            saved
+              ? 'bg-emerald-500 text-white'
+              : dirty
+                ? 'bg-sky-500 text-white'
+                : 'bg-slate-700 text-slate-300'
+          }`}
+        >
+          {saved ? 'Saved ✓' : dirty ? 'Save changes' : 'Saved'}
+        </button>
+      </div>
       <p className="mb-4 text-slate-400">Tweak the recipe as you learn. Changes apply next load.</p>
 
       {/* Notifications */}
@@ -328,11 +351,6 @@ export function Rules() {
         ))}
       </Section>
 
-      <div className="mt-6">
-        <Button className="w-full" onClick={save}>
-          {saved ? 'Saved ✓' : 'Save changes'}
-        </Button>
-      </div>
     </div>
   );
 }

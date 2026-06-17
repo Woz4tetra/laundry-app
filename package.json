@@ -11,5 +11,8 @@
     "build:web": "npm --prefix web run build",
     "typecheck": "npm --prefix server run typecheck && npm --prefix web run typecheck",
     "gen-vapid": "npm --prefix server run gen-vapid"
+  },
+  "dependencies": {
+    "headroom-ai": "^0.22.4"
   }
 }

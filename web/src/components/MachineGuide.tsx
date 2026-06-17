@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Machine, PanelControl } from '../lib/types';
 import { Button } from './ui';
 
@@ -171,15 +171,29 @@ export function MachineGuide({
   const current = machine.steps[step];
   const hi = new Set(current?.highlight ?? []);
 
+  // The panel is wide and short, so it renders tiny on a phone. Give it a
+  // legible minimum width and scroll horizontally, hinting when it overflows.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [overflow, setOverflow] = useState(false);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) setOverflow(el.scrollWidth > el.clientWidth + 4);
+  }, [machine]);
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="overflow-hidden rounded-2xl bg-slate-900 p-2 ring-1 ring-white/10">
-        <svg
-          viewBox={`0 0 ${machine.panel.width} ${machine.panel.height}`}
-          className="h-auto w-full"
-          role="img"
-          aria-label={`${machine.name} control panel`}
+      <div>
+        <div
+          ref={scrollRef}
+          className="overflow-x-auto rounded-2xl bg-slate-900 p-2 ring-1 ring-white/10"
         >
+          <svg
+            viewBox={`0 0 ${machine.panel.width} ${machine.panel.height}`}
+            className="h-auto"
+            style={{ width: '100%', minWidth: 760 }}
+            role="img"
+            aria-label={`${machine.name} control panel`}
+          >
           <rect
             x={4}
             y={4}
@@ -190,10 +204,16 @@ export function MachineGuide({
             stroke="#1e293b"
             strokeWidth={2}
           />
-          {machine.panel.controls.map((c) => (
-            <Control key={c.id} c={c} active={hi.has(c.id)} litLabel={litLeds[c.id]} />
-          ))}
-        </svg>
+            {machine.panel.controls.map((c) => (
+              <Control key={c.id} c={c} active={hi.has(c.id)} litLabel={litLeds[c.id]} />
+            ))}
+          </svg>
+        </div>
+        {overflow && (
+          <div className="mt-1 text-center text-[11px] text-slate-500">
+            ← swipe to see the whole panel →
+          </div>
+        )}
       </div>
 
       <div className="rounded-2xl bg-slate-800/70 p-4">
