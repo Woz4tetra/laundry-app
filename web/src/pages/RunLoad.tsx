@@ -293,6 +293,10 @@ export function RunLoad() {
               <div className="my-2 text-4xl font-bold">
                 <Countdown endsAt={load.timer.endsAt} />
               </div>
+              <p className="mb-3 text-sm text-slate-400">
+                📲 With notifications on, your phone alerts you when the wash is done. You can close
+                the app.
+              </p>
               <Button variant="success" className="w-full" onClick={() => { setStatus('wash_done'); setSub('dry'); }}>
                 Wash is done →
               </Button>
@@ -305,10 +309,22 @@ export function RunLoad() {
             </Card>
           ) : load.timer?.kind === 'delayed_start' ? (
             <Card className="ring-amber-500/40">
-              <div className="font-semibold">⏰ Scheduled</div>
-              <p className="mt-1 text-sm text-slate-300">
-                Set the washer's <b>Delay Wash</b> so it starts around {fmtTime(load.timer.endsAt)}.
-                We'll also remind you. (Finishes about {fmtTime(load.timer.endsAt + totalMinutes * 60000)}.)
+              <div className="font-semibold">⏰ Scheduled to start {fmtTime(load.timer.endsAt)}</div>
+              <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-slate-300">
+                <li>
+                  Press <b>Delay Wash</b> on the washer and set it to about{' '}
+                  <b>
+                    {Math.max(1, Math.round((load.timer.endsAt - Date.now()) / 3_600_000))} hr
+                  </b>
+                  .
+                </li>
+                <li>
+                  Press <b>Start</b> so the washer runs on the delay.
+                </li>
+              </ol>
+              <p className="mt-2 text-sm text-slate-400">
+                📲 With notifications on, we'll remind you when it's time to start. (Wash finishes
+                about {fmtTime(load.timer.endsAt + totalMinutes * 60000)}.)
               </p>
               <Button className="mt-3 w-full" onClick={startWash}>
                 Actually, start now
@@ -329,18 +345,21 @@ export function RunLoad() {
                   <div className="font-semibold">🌙 Bedtime check</div>
                   <p className="mt-1 text-sm text-slate-300">
                     Starting now finishes around {fmtTime(schedule.finishMs)}, during quiet hours.
-                    Start at {fmtTime(schedule.suggestedStartMs)} to finish by{' '}
-                    {fmtTime(schedule.suggestedFinishMs!)}.
+                    Use the delay timer below to start at {fmtTime(schedule.suggestedStartMs)} and
+                    finish by {fmtTime(schedule.suggestedFinishMs!)}.
                   </p>
-                  <Button
-                    variant="ghost"
-                    className="mt-3 w-full py-3 text-base"
-                    onClick={() => scheduleWash(schedule.suggestedStartMs!)}
-                  >
-                    Schedule for {fmtTime(schedule.suggestedStartMs)}
-                  </Button>
                 </Card>
               )}
+
+              <DelayTimer
+                durationMin={config.settings.defaultWashMinutes}
+                defaultHours={
+                  schedule.conflict && schedule.suggestedStartMs
+                    ? Math.max(1, Math.round((schedule.suggestedStartMs - Date.now()) / 3_600_000))
+                    : 0
+                }
+                onSchedule={scheduleWash}
+              />
 
               <Button variant="success" className="w-full" onClick={startWash}>
                 ▶ Start wash now
@@ -471,5 +490,81 @@ function Setting({ label, value, hint }: { label: string; value: string; hint?: 
       <div className="text-xl font-bold">{value}</div>
       {hint && <div className="text-xs text-slate-500">{hint}</div>}
     </div>
+  );
+}
+
+/**
+ * Pick how many hours from now the wash should begin. The hour count is the
+ * number to dial into the washer's Delay Wash; the card shows the resulting
+ * start/finish clock times and the steps to set it.
+ */
+function DelayTimer({
+  durationMin,
+  defaultHours,
+  onSchedule,
+}: {
+  durationMin: number;
+  defaultHours: number;
+  onSchedule: (startMs: number) => void;
+}) {
+  const [hours, setHours] = useState(defaultHours);
+  const startMs = Date.now() + hours * 3_600_000;
+  const finishMs = startMs + durationMin * 60_000;
+
+  return (
+    <Card>
+      <div className="font-semibold">⏲ Delay start</div>
+      <p className="mt-1 text-sm text-slate-400">
+        Set how many hours from now the wash should begin.
+      </p>
+
+      <div className="mt-3 flex items-center justify-center gap-4">
+        <button
+          className="h-12 w-12 rounded-xl bg-slate-700 text-2xl disabled:opacity-40"
+          disabled={hours <= 0}
+          onClick={() => setHours((h) => Math.max(0, h - 1))}
+          aria-label="fewer hours"
+        >
+          −
+        </button>
+        <div className="w-24 text-center">
+          <div className="text-4xl font-bold">{hours}</div>
+          <div className="text-xs text-slate-400">{hours === 1 ? 'hour' : 'hours'}</div>
+        </div>
+        <button
+          className="h-12 w-12 rounded-xl bg-slate-700 text-2xl disabled:opacity-40"
+          disabled={hours >= 24}
+          onClick={() => setHours((h) => Math.min(24, h + 1))}
+          aria-label="more hours"
+        >
+          +
+        </button>
+      </div>
+
+      <div className="mt-3 rounded-xl bg-slate-900/60 p-3 text-sm text-slate-300">
+        {hours === 0
+          ? `Starts now, done about ${fmtTime(finishMs)}.`
+          : `Starts about ${fmtTime(startMs)}, done about ${fmtTime(finishMs)}.`}
+      </div>
+
+      {hours > 0 && (
+        <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-slate-300">
+          <li>
+            On the washer, press <b>Delay Wash</b> and set it to{' '}
+            <b>
+              {hours} {hours === 1 ? 'hour' : 'hours'}
+            </b>
+            .
+          </li>
+          <li>
+            Press <b>Start</b> so the delay timer begins.
+          </li>
+        </ol>
+      )}
+
+      <Button className="mt-3 w-full" disabled={hours === 0} onClick={() => onSchedule(startMs)}>
+        {hours === 0 ? 'Pick hours to schedule' : `Schedule for ${fmtTime(startMs)}`}
+      </Button>
+    </Card>
   );
 }

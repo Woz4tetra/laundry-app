@@ -100,6 +100,40 @@ tailscale serve --bg 23103
 
 Data (the SQLite db) persists in `./data`.
 
+## Notifications on Android
+
+Push notifications fire when a wash or dry timer finishes, even with the app closed. Setup:
+
+1. **Generate VAPID keys** and put them in `.env` (push is disabled without them):
+
+   ```bash
+   npm run gen-vapid   # prints VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY to paste into .env
+   ```
+
+   Restart the server after editing `.env`.
+
+2. **Serve over HTTPS.** Web Push needs a secure origin. A plain
+   `http://<tailscale-ip>:23103` will not work for notifications. Expose it tailnet-only:
+
+   ```bash
+   tailscale serve --bg 23103
+   ```
+
+   Then use the `https://<machine>.<tailnet>.ts.net` URL Tailscale prints.
+
+3. **Install the app (Chrome on Android).** Open that HTTPS URL, then Chrome menu (⋮) →
+   **Add to Home screen** / **Install app**. Installing makes notifications reliable and runs the
+   app full screen.
+
+4. **Enable notifications in-app.** Open the installed app, go to the **Rules** tab, and tap
+   **Enable** next to 🔔 Notifications. Accept the browser permission prompt.
+
+5. **Allow notifications at the OS level** if you dismissed the prompt: Android **Settings → Apps →
+   Laundry Recipe → Notifications** (the installed PWA shows up as its own app).
+
+Each phone subscribes itself, so repeat steps 3 to 5 on every device. If notifications stop after a
+server restart, the subscription is still valid; re-enabling in Rules re-registers it.
+
 ## Care-label scanner (later phase)
 
 A care-label OCR helper is stubbed in. Point it at a local VLM (Qwen2.5-VL / Qwen3-VL) via
