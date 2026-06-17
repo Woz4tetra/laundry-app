@@ -333,7 +333,7 @@ export function RunLoad() {
                 className="mt-2 w-full text-sm text-slate-400 underline"
                 onClick={() => cancelTimer('ready_to_wash')}
               >
-                ← Back to wash settings
+                ← Back to wash settings (and cancel timer)
               </button>
             </Card>
           ) : (

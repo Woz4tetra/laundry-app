@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../lib/store';
 import { Button, Card, Header, Pill } from '../components/ui';
 import { Countdown } from '../components/Countdown';
+import { fmtTime } from '../lib/schedule';
 import type { Load, LoadStatus } from '../lib/types';
 
 const STATUS: Record<LoadStatus, { label: string; tone: string }> = {
@@ -16,6 +17,7 @@ const STATUS: Record<LoadStatus, { label: string; tone: string }> = {
 };
 
 function actionLabel(l: Load): string {
+  if (l.timer?.kind === 'delayed_start') return l.timer.endsAt > Date.now() ? 'View' : 'Start';
   switch (l.status) {
     case 'washing':
       return 'Washing…';
@@ -71,7 +73,14 @@ export function Overview() {
       <div className="space-y-3">
         {session.loads.map((load) => {
           const primary = byId.get(load.categoryIds[0]);
-          const st = STATUS[load.status];
+          const t = load.timer;
+          const scheduled = t?.kind === 'delayed_start';
+          const pending = scheduled && t!.endsAt > Date.now();
+          // A scheduled wash keeps its pre-wash status, so surface the timer
+          // instead of a misleading "Ready to wash".
+          const st = scheduled
+            ? { label: pending ? 'Scheduled' : 'Time to start', tone: 'amber' }
+            : STATUS[load.status];
           return (
             <Card key={load.id} className="flex items-center justify-between gap-3">
               <div className="min-w-0">
@@ -80,10 +89,17 @@ export function Overview() {
                 </div>
                 <div className="mt-1 flex items-center gap-2">
                   <Pill tone={st.tone}>{st.label}</Pill>
-                  {load.timer && (load.status === 'washing' || load.status === 'drying') && (
+                  {scheduled ? (
                     <span className="text-sm text-slate-300">
-                      ⏱ <Countdown endsAt={load.timer.endsAt} />
+                      🕒 {pending ? `runs ${fmtTime(t!.endsAt)}` : 'ready to start'}
                     </span>
+                  ) : (
+                    t &&
+                    (load.status === 'washing' || load.status === 'drying') && (
+                      <span className="text-sm text-slate-300">
+                        ⏱ <Countdown endsAt={t.endsAt} />
+                      </span>
+                    )
                   )}
                 </div>
               </div>

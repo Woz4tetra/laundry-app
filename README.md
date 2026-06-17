@@ -112,14 +112,18 @@ Push notifications fire when a wash or dry timer finishes, even with the app clo
 
    Restart the server after editing `.env`.
 
-2. **Serve over HTTPS.** Web Push needs a secure origin. A plain
-   `http://<tailscale-ip>:23103` will not work for notifications. Expose it tailnet-only:
+2. **Serve over HTTPS.** Web Push needs a secure origin. Plain HTTP (the raw
+   `http://<host>:23103`, shown with a "Not secure" ⚠ in Chrome) disables the notification API
+   entirely, there is no permission prompt to accept. Expose it tailnet-only over HTTPS (needs
+   root, and HTTPS certificates enabled for the tailnet in the admin console):
 
    ```bash
-   tailscale serve --bg 23103
+   sudo tailscale serve --bg 23103
+   tailscale serve status          # confirms the https URL
    ```
 
-   Then use the `https://<machine>.<tailnet>.ts.net` URL Tailscale prints.
+   Then open the `https://<machine>.<tailnet>.ts.net/` URL (e.g.
+   `https://genericservername.tail291fd.ts.net/`), not `:23103`.
 
 3. **Install the app (Chrome on Android).** Open that HTTPS URL, then Chrome menu (⋮) →
    **Add to Home screen** / **Install app**. Installing makes notifications reliable and runs the
