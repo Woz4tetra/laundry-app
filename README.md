@@ -128,8 +128,13 @@ Push notifications fire when a wash or dry timer finishes, even with the app clo
 4. **Enable notifications in-app.** Open the installed app, go to the **Rules** tab, and tap
    **Enable** next to 🔔 Notifications. Accept the browser permission prompt.
 
-5. **Allow notifications at the OS level** if you dismissed the prompt: Android **Settings → Apps →
-   Laundry Recipe → Notifications** (the installed PWA shows up as its own app).
+5. **If you dismissed the permission prompt**, re-grant it through Chrome (the reliable path on
+   Pixel/Android). On the app's page tap the tune/page-info icon left of the address bar →
+   **Permissions → Notifications → Allow**, or Chrome **⋮ → Settings → Site settings →
+   Notifications**, find the app's origin, set it to **Allow**. The installed app uses the
+   manifest short name, so in the app list it appears as **Laundry**, not "Laundry Recipe"; if a
+   WebAPK was created its notifications may live under **Settings → Apps → Laundry** or, on many
+   Pixels, under **Settings → Apps → Chrome**.
 
 Each phone subscribes itself, so repeat steps 3 to 5 on every device. If notifications stop after a
 server restart, the subscription is still valid; re-enabling in Rules re-registers it.
