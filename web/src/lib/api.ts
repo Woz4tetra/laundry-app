@@ -2,9 +2,14 @@ import type { AppConfig, LaundrySession } from './types';
 
 async function req<T>(url: string, opts: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
     credentials: 'same-origin',
     ...opts,
+    // Only declare a JSON content-type when we actually send a body, otherwise
+    // Fastify rejects the empty body with FST_ERR_CTP_EMPTY_JSON_BODY (400).
+    headers: {
+      ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
+      ...opts.headers,
+    },
   });
   if (res.status === 401) throw new AuthError();
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
