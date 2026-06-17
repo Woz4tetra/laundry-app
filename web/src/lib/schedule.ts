@@ -1,7 +1,7 @@
 // Quiet-hours / bedtime scheduling math. Runs on the client so it uses the
 // user's local time. The server only stores the resulting absolute timestamps.
 
-import type { QuietHours } from './types';
+import type { GlobalSettings, Load, QuietHours } from './types';
 
 export function parseHM(s: string): number {
   const [h, m] = s.split(':').map(Number);
@@ -69,6 +69,24 @@ export function evaluateSchedule(
     suggestedStartMs,
     suggestedFinishMs: suggestedStartMs + durationMin * 60_000,
   };
+}
+
+/**
+ * Move a load whose scheduled delay has elapsed into its running phase. Mirrors
+ * the server's auto-start so an open app advances immediately instead of waiting
+ * for the next server scan. Safe to call only when the delayed_start timer is due.
+ */
+export function startScheduledPhase(load: Load, settings: GlobalSettings): void {
+  const phase = load.timer?.startsPhase ?? 'wash';
+  const now = Date.now();
+  if (phase === 'dry') {
+    const minutes = load.dry?.minutes ?? settings.defaultDryMinutes;
+    load.status = 'drying';
+    load.timer = { kind: 'dry', endsAt: now + minutes * 60_000, notified: false };
+  } else {
+    load.status = 'washing';
+    load.timer = { kind: 'wash', endsAt: now + settings.defaultWashMinutes * 60_000, notified: false };
+  }
 }
 
 export function fmtTime(ms: number): string {

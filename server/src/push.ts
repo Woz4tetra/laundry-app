@@ -4,6 +4,7 @@
 import webpush from 'web-push';
 import {
   getActiveSession,
+  getSettings,
   listPushSubs,
   removePushSub,
   saveSession,
@@ -60,6 +61,31 @@ function timerMessage(load: Load): PushPayload {
   return { title: '⏰ Time to start', body: `Start the ${load.label} load now.`, loadId: load.id };
 }
 
+function startedMessage(load: Load, phase: 'wash' | 'dry'): PushPayload {
+  if (phase === 'dry') {
+    return { title: '🔥 Drying started', body: `${load.label} started drying automatically.`, loadId: load.id };
+  }
+  return { title: '🧺 Wash started', body: `${load.label} started washing automatically.`, loadId: load.id };
+}
+
+/**
+ * Move a load whose scheduled delay has elapsed into its running phase. The wash
+ * starts on its own, so the family never has to come back and tap "start".
+ */
+function startScheduledPhase(load: Load, now: number): 'wash' | 'dry' {
+  const settings = getSettings();
+  const phase = load.timer?.startsPhase ?? 'wash';
+  if (phase === 'dry') {
+    const minutes = load.dry?.minutes ?? settings.defaultDryMinutes;
+    load.status = 'drying';
+    load.timer = { kind: 'dry', endsAt: now + minutes * 60_000, notified: false };
+  } else {
+    load.status = 'washing';
+    load.timer = { kind: 'wash', endsAt: now + settings.defaultWashMinutes * 60_000, notified: false };
+  }
+  return phase;
+}
+
 /**
  * Scan the active session for due timers, fire notifications, and advance load
  * status. Runs on an interval from index.ts.
@@ -72,6 +98,16 @@ export async function scanTimers(now = Date.now()): Promise<void> {
   for (const load of session.loads) {
     const t = load.timer;
     if (!t || t.notified || t.endsAt > now) continue;
+
+    // A scheduled wash auto-starts when its delay elapses: swap the
+    // delayed_start timer for a live wash/dry timer instead of nagging the
+    // user to start it manually.
+    if (t.kind === 'delayed_start') {
+      const phase = startScheduledPhase(load, now);
+      await sendToAll(startedMessage(load, phase));
+      changed = true;
+      continue;
+    }
 
     await sendToAll(timerMessage(load));
     t.notified = true;

@@ -310,24 +310,19 @@ export function RunLoad() {
           ) : load.timer?.kind === 'delayed_start' ? (
             <Card className="ring-amber-500/40">
               <div className="font-semibold">⏰ Scheduled to start {fmtTime(load.timer.endsAt)}</div>
-              <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-slate-300">
-                <li>
-                  Press <b>Delay Wash</b> on the washer and set it to about{' '}
-                  <b>
-                    {Math.max(1, Math.round((load.timer.endsAt - Date.now()) / 3_600_000))} hr
-                  </b>
-                  .
-                </li>
-                <li>
-                  Press <b>Start</b> so the washer runs on the delay.
-                </li>
-              </ol>
+              <p className="mt-2 text-sm text-slate-300">
+                The app starts this wash automatically at {fmtTime(load.timer.endsAt)}, so set the
+                washer's <b>Delay Wash</b> to about{' '}
+                <b>{Math.max(1, Math.round((load.timer.endsAt - Date.now()) / 3_600_000))} hr</b> and
+                press <b>Start</b> so the machine runs at the same time.
+              </p>
               <p className="mt-2 text-sm text-slate-400">
-                📲 With notifications on, we'll remind you when it's time to start. (Wash finishes
-                about {fmtTime(load.timer.endsAt + totalMinutes * 60000)}.)
+                📲 No need to come back: the wash countdown begins on its own. With notifications on,
+                we'll ping you when it starts. (Wash finishes about{' '}
+                {fmtTime(load.timer.endsAt + totalMinutes * 60000)}.)
               </p>
               <Button className="mt-3 w-full" onClick={startWash}>
-                Actually, start now
+                Start now instead
               </Button>
               <button
                 className="mt-2 w-full text-sm text-slate-400 underline"

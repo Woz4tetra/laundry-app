@@ -17,7 +17,7 @@ const STATUS: Record<LoadStatus, { label: string; tone: string }> = {
 };
 
 function actionLabel(l: Load): string {
-  if (l.timer?.kind === 'delayed_start') return l.timer.endsAt > Date.now() ? 'View' : 'Start';
+  if (l.timer?.kind === 'delayed_start') return l.timer.endsAt > Date.now() ? 'View' : 'Starting…';
   switch (l.status) {
     case 'washing':
       return 'Washing…';
@@ -79,7 +79,7 @@ export function Overview() {
           // A scheduled wash keeps its pre-wash status, so surface the timer
           // instead of a misleading "Ready to wash".
           const st = scheduled
-            ? { label: pending ? 'Scheduled' : 'Time to start', tone: 'amber' }
+            ? { label: pending ? 'Scheduled' : 'Starting…', tone: 'amber' }
             : STATUS[load.status];
           return (
             <Card key={load.id} className="flex items-center justify-between gap-3">
@@ -91,7 +91,7 @@ export function Overview() {
                   <Pill tone={st.tone}>{st.label}</Pill>
                   {scheduled ? (
                     <span className="text-sm text-slate-300">
-                      🕒 {pending ? `runs ${fmtTime(t!.endsAt)}` : 'ready to start'}
+                      🕒 {pending ? `runs ${fmtTime(t!.endsAt)}` : 'starting…'}
                     </span>
                   ) : (
                     t &&

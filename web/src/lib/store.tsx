@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { api, AuthError } from './api';
+import { startScheduledPhase } from './schedule';
 import type { AppConfig, LaundrySession, Load } from './types';
 
 interface Store {
@@ -35,6 +36,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const esRef = useRef<EventSource | null>(null);
   const sessionRef = useRef<LaundrySession | null>(null);
   sessionRef.current = session;
+  const configRef = useRef<AppConfig | null>(null);
+  configRef.current = config;
 
   const reloadConfig = useCallback(async () => {
     setConfig(await api.getConfig());
@@ -122,6 +125,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }),
     [update],
   );
+
+  // Auto-start scheduled washes the moment their delay elapses while the app is
+  // open. The server's timer loop is the source of truth for the closed-app
+  // case; this just avoids waiting for the next server scan when someone's
+  // watching, so a scheduled wash needs no manual tap.
+  useEffect(() => {
+    if (!authed) return;
+    const tick = () => {
+      const s = sessionRef.current;
+      const cfg = configRef.current;
+      if (!s || !cfg) return;
+      const now = Date.now();
+      const due = s.loads.some(
+        (l) => l.timer?.kind === 'delayed_start' && l.timer.endsAt <= now,
+      );
+      if (!due) return;
+      update((draft) => {
+        for (const l of draft.loads) {
+          const t = l.timer;
+          if (t?.kind === 'delayed_start' && t.endsAt <= Date.now()) {
+            startScheduledPhase(l, cfg.settings);
+          }
+        }
+      });
+    };
+    tick();
+    const id = setInterval(tick, 5000);
+    return () => clearInterval(id);
+  }, [authed, update]);
 
   const value: Store = {
     ready,

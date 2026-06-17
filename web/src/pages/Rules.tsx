@@ -38,6 +38,39 @@ export function Rules() {
   const patchCat = (id: string, patch: Partial<Category>) =>
     setCategories((cs) => cs.map((c) => (c.id === id ? { ...c, ...patch } : c)));
 
+  const addCategory = () =>
+    setCategories((cs) => [
+      ...cs,
+      {
+        id: `cat_${Date.now()}`,
+        name: 'New category',
+        icon: '🧺',
+        color: '#64748b',
+        order: cs.length ? Math.max(...cs.map((c) => c.order)) + 1 : 1,
+        washTemp: 2,
+        dryMethod: 'machine',
+        dryDefault: { heat: 'Low', minutes: 60 },
+        mergeIntoId: null,
+        exclusions: [],
+        meshBag: null,
+        maxItems: null,
+        routeToService: false,
+      },
+    ]);
+
+  // Delete a category and scrub references so nothing points at a missing id:
+  // drop it from any merge target and from every prep reminder.
+  const deleteCategory = (id: string) => {
+    setCategories((cs) =>
+      cs.filter((c) => c.id !== id).map((c) => (c.mergeIntoId === id ? { ...c, mergeIntoId: null } : c)),
+    );
+    setPrep((p) =>
+      p.map((r) =>
+        r.appliesTo.includes(id) ? { ...r, appliesTo: r.appliesTo.filter((x) => x !== id) } : r,
+      ),
+    );
+  };
+
   // Categories a per-load reminder can target (service-routed ones never wash).
   const washCategories = categories.filter((c) => !c.routeToService);
 
@@ -149,9 +182,43 @@ export function Rules() {
       <Section title="Categories">
         {categories.map((c) => (
           <div key={c.id} className="rounded-2xl bg-slate-900/60 p-3">
-            <div className="mb-2 font-semibold">
-              {c.icon} {c.name}
+            <div className="mb-2 flex items-center gap-2">
+              <input
+                value={c.icon}
+                onChange={(e) => patchCat(c.id, { icon: e.target.value })}
+                className="w-12 rounded-lg bg-slate-700 px-2 py-2 text-center text-lg"
+                aria-label="category icon"
+              />
+              <input
+                value={c.name}
+                onChange={(e) => patchCat(c.id, { name: e.target.value })}
+                className="flex-1 rounded-lg bg-slate-700 px-3 py-2 text-sm font-semibold"
+                aria-label="category name"
+              />
+              <input
+                type="color"
+                value={c.color}
+                onChange={(e) => patchCat(c.id, { color: e.target.value })}
+                className="h-9 w-9 shrink-0 rounded-lg bg-slate-700"
+                aria-label="category color"
+              />
+              <button
+                className="px-1 text-rose-400"
+                onClick={() => deleteCategory(c.id)}
+                aria-label="delete category"
+              >
+                ✕
+              </button>
             </div>
+            <label className="mb-2 flex items-center justify-between text-sm">
+              <span className="text-slate-400">Route to cleaning service (not washed)</span>
+              <input
+                type="checkbox"
+                checked={c.routeToService}
+                onChange={(e) => patchCat(c.id, { routeToService: e.target.checked })}
+                className="h-5 w-5"
+              />
+            </label>
             {!c.routeToService && (
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <label className="flex flex-col gap-1">
@@ -217,6 +284,9 @@ export function Rules() {
             {c.routeToService && <div className="text-sm text-slate-400">→ cleaning service</div>}
           </div>
         ))}
+        <Button variant="ghost" className="w-full py-2 text-sm" onClick={addCategory}>
+          + Add category
+        </Button>
       </Section>
 
       {/* Prep rules */}
