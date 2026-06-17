@@ -3,7 +3,8 @@
 
 import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { nanoid } from 'nanoid';
 import {
   SEED_CATEGORIES,
@@ -19,7 +20,11 @@ import type {
   PrepRule,
 } from './types.js';
 
-const DATA_DIR = process.env.DATA_DIR || resolve('data');
+// Default to <repo-root>/data (this file is at server/src/db.ts) so the dev
+// server and the Docker container share one database. Docker overrides this
+// with DATA_DIR=/data (a mounted volume that also maps to <repo-root>/data).
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const DATA_DIR = process.env.DATA_DIR || resolve(__dirname, '../../data');
 mkdirSync(DATA_DIR, { recursive: true });
 
 const db = new Database(join(DATA_DIR, 'laundry.db'));
