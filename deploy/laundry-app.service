@@ -1,40 +1,28 @@
-# systemd unit template for the Laundry Recipe PWA.
-# Placeholders (__WORKDIR__, __USER__, ...) are filled in by deploy/install.sh.
+# systemd unit template for the Laundry Recipe PWA (Docker Compose).
+# Placeholders (__WORKDIR__, __COMPOSE__) are filled in by deploy/install.sh.
 # Do not install this file directly; run deploy/install.sh instead.
 
 [Unit]
-Description=Laundry Recipe PWA
+Description=Laundry Recipe PWA (Docker Compose)
 Documentation=https://github.com/Woz4tetra/laundry-app
-After=network-online.target
+Requires=docker.service
+After=docker.service network-online.target
 Wants=network-online.target
 
 [Service]
-Type=simple
-User=__USER__
-Group=__GROUP__
-WorkingDirectory=__WORKDIR__/server
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=__WORKDIR__
 
-# Default the database to <repo>/data. Listed before EnvironmentFile so a
-# DATA_DIR set in .env still wins.
-Environment=NODE_ENV=production
-Environment=DATA_DIR=__WORKDIR__/data
-Environment=PATH=__NODE_DIR__:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-EnvironmentFile=__WORKDIR__/.env
+# Bring the stack up at boot (image is built ahead of time by install.sh).
+# Compose's own `restart: unless-stopped` keeps the container alive after that.
+ExecStart=__COMPOSE__ up -d
+ExecStop=__COMPOSE__ down
+# `systemctl reload laundry-app` rebuilds and redeploys after a code change.
+ExecReload=__COMPOSE__ up -d --build
 
-ExecStart=__NPM__ start
-Restart=on-failure
-RestartSec=5
-
-# Logs to journald: journalctl -u laundry-app -f
-StandardOutput=journal
-StandardError=journal
-
-# Light hardening.
-NoNewPrivileges=true
-ProtectSystem=full
-ProtectHome=false
-PrivateTmp=true
-ReadWritePaths=__WORKDIR__
+# `up`/`down` can take a while when images need building or pulling.
+TimeoutStartSec=0
 
 [Install]
 WantedBy=multi-user.target
