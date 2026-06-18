@@ -154,6 +154,7 @@ export const SEED_SETTINGS: GlobalSettings = {
   quietHours: { enabled: true, start: '22:00', end: '07:00' },
   defaultWashMinutes: 55,
   defaultDryMinutes: 60,
+  foldReminderEvery: 2,
 };
 
 // --- LG washer (front-load, WM3400-series layout) ---

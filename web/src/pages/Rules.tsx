@@ -176,6 +176,11 @@ export function Rules() {
           value={settings.defaultDryMinutes}
           onChange={(v) => setSettings({ ...settings, defaultDryMinutes: v })}
         />
+        <NumField
+          label="Fold reminder every N loads (0 = off)"
+          value={settings.foldReminderEvery}
+          onChange={(v) => setSettings({ ...settings, foldReminderEvery: Math.max(0, v) })}
+        />
       </Section>
 
       {/* Categories */}

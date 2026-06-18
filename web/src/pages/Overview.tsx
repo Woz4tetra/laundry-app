@@ -44,6 +44,12 @@ export function Overview() {
   const showDoorReminder =
     config.settings.leaveDoorOpenAfter && allDone && !session.doorOpenAcknowledged;
 
+  // Nudge to fold/hang once enough finished loads pile up unacknowledged.
+  const doneCount = session.loads.filter((l) => l.status === 'done').length;
+  const every = config.settings.foldReminderEvery;
+  const unfolded = doneCount - (session.foldedThrough ?? 0);
+  const showFoldReminder = every > 0 && unfolded >= every;
+
   return (
     <div>
       <Header
@@ -114,6 +120,23 @@ export function Overview() {
           );
         })}
       </div>
+
+      {showFoldReminder && (
+        <Card className="mt-5 ring-amber-500/40">
+          <div className="mb-1 text-lg font-semibold">🧺 Fold or hang the laundry</div>
+          <p className="text-sm text-slate-300">
+            {unfolded} finished load{unfolded === 1 ? ' is' : 's are'} piling up. Fold or hang{' '}
+            {unfolded === 1 ? 'it' : 'them'} before they wrinkle, then mark them put away.
+          </p>
+          <Button
+            variant="success"
+            className="mt-3 w-full py-3 text-base"
+            onClick={() => update((s) => void (s.foldedThrough = doneCount))}
+          >
+            Done, put them away 🧺
+          </Button>
+        </Card>
+      )}
 
       {showDoorReminder && (
         <Card className="mt-5 ring-amber-500/40">

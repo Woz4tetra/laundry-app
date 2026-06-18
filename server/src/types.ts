@@ -55,6 +55,8 @@ export interface GlobalSettings {
   /** Default wash/dry durations in minutes for finish-time estimates. */
   defaultWashMinutes: number;
   defaultDryMinutes: number;
+  /** Remind to fold/hang once this many loads finish unacknowledged. 0 = off. */
+  foldReminderEvery: number;
 }
 
 // --- Machine control-panel model (drives the SVG walkthrough) ---
@@ -152,6 +154,8 @@ export interface LaundrySession {
   loads: Load[];
   /** Set once all loads are washed, to surface the leave-door-open reminder. */
   doorOpenAcknowledged: boolean;
+  /** Count of finished loads the user has confirmed folded/hung & put away. */
+  foldedThrough: number;
   createdAt: number;
   updatedAt: number;
   active: boolean;

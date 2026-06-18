@@ -91,6 +91,34 @@ docker compose up --build -d
 If your machine only has the older Compose v1 (`docker-compose` as a separate
 binary, with a hyphen), use `docker-compose up --build -d` instead.
 
+### Without Docker (systemd)
+
+If you'd rather run it natively, there's a systemd service. It needs Node 20+
+and npm on PATH. The install script builds the PWA, installs server deps, and
+registers the service to run as your user.
+
+```bash
+cp .env.example .env       # set APP_PASSCODE, SESSION_SECRET, VAPID keys
+sudo ./deploy/install.sh
+```
+
+Manage it the usual way:
+
+```bash
+systemctl status laundry-app
+journalctl -u laundry-app -f
+sudo systemctl restart laundry-app
+```
+
+Remove it (keeps the database by default):
+
+```bash
+sudo ./deploy/uninstall.sh              # add --purge-data to also delete ./data
+```
+
+The service defaults `DATA_DIR` to `./data`; a `DATA_DIR` set in `.env`
+overrides it.
+
 Then open it from any device on the tailnet at `http://<tailscale-ip>:23103`. For HTTPS (needed
 for some PWA/push features on iOS) expose it tailnet-only with:
 

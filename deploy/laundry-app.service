@@ -1,0 +1,40 @@
+# systemd unit template for the Laundry Recipe PWA.
+# Placeholders (__WORKDIR__, __USER__, ...) are filled in by deploy/install.sh.
+# Do not install this file directly; run deploy/install.sh instead.
+
+[Unit]
+Description=Laundry Recipe PWA
+Documentation=https://github.com/Woz4tetra/laundry-app
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+Group=__GROUP__
+WorkingDirectory=__WORKDIR__/server
+
+# Default the database to <repo>/data. Listed before EnvironmentFile so a
+# DATA_DIR set in .env still wins.
+Environment=NODE_ENV=production
+Environment=DATA_DIR=__WORKDIR__/data
+Environment=PATH=__NODE_DIR__:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+EnvironmentFile=__WORKDIR__/.env
+
+ExecStart=__NPM__ start
+Restart=on-failure
+RestartSec=5
+
+# Logs to journald: journalctl -u laundry-app -f
+StandardOutput=journal
+StandardError=journal
+
+# Light hardening.
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=false
+PrivateTmp=true
+ReadWritePaths=__WORKDIR__
+
+[Install]
+WantedBy=multi-user.target

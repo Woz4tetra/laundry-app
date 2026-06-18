@@ -84,8 +84,12 @@ export const getPrepRules = (): PrepRule[] =>
   readConfig<PrepRule[]>('prep_rules') ?? SEED_PREP_RULES;
 export const setPrepRules = (p: PrepRule[]) => writeConfig('prep_rules', p);
 
-export const getSettings = (): GlobalSettings =>
-  readConfig<GlobalSettings>('settings') ?? SEED_SETTINGS;
+// Merge over the seed defaults so configs saved before a new setting was added
+// still pick up a sensible default for it.
+export const getSettings = (): GlobalSettings => ({
+  ...SEED_SETTINGS,
+  ...(readConfig<GlobalSettings>('settings') ?? {}),
+});
 export const setSettings = (s: GlobalSettings) => writeConfig('settings', s);
 
 export const getMachines = (): Machine[] =>
@@ -124,6 +128,7 @@ export function createSession(): LaundrySession {
     sort: {},
     loads: [],
     doorOpenAcknowledged: false,
+    foldedThrough: 0,
     createdAt: now,
     updatedAt: now,
     active: true,

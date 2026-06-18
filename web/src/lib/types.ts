@@ -44,6 +44,8 @@ export interface GlobalSettings {
   quietHours: QuietHours;
   defaultWashMinutes: number;
   defaultDryMinutes: number;
+  /** Remind to fold/hang once this many loads finish unacknowledged. 0 = off. */
+  foldReminderEvery: number;
 }
 
 export type ControlType = 'dial' | 'button' | 'display' | 'ledGroup' | 'logo' | 'text';
@@ -118,6 +120,8 @@ export interface LaundrySession {
   sort: Record<string, FillLevel>;
   loads: Load[];
   doorOpenAcknowledged: boolean;
+  /** Count of finished loads the user has confirmed folded/hung & put away. */
+  foldedThrough: number;
   createdAt: number;
   updatedAt: number;
   active: boolean;
